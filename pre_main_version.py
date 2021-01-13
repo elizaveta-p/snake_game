@@ -6,23 +6,23 @@ import random
 import time
 
 
-# def load_image(name, colorkey=None):
-#     fullname = os.path.join('data', name)
-#
-#     if not os.path.isfile(fullname):
-#         print('not found')
-#         sys.exit()
-#     image = pygame.image.load(fullname)
-#
-#     if colorkey is not None:
-#         image = image.convert()
-#         if colorkey == -1:
-#             colorkey = image.get_at((0, 0))
-#         image.set_colorkey(colorkey)
-#
-#     else:
-#         image = image.convert_alpha()
-#     return image
+def load_image(name, colorkey=None):
+    fullname = os.path.join('data', name)
+
+    if not os.path.isfile(fullname):
+        print('not found')
+        sys.exit()
+    image = pygame.image.load(fullname)
+
+    if colorkey is not None:
+        image = image.convert()
+        if colorkey == -1:
+            colorkey = image.get_at((0, 0))
+        image.set_colorkey(colorkey)
+
+    else:
+        image = image.convert_alpha()
+    return image
 
 
 class Game:
@@ -69,9 +69,9 @@ class Game:
         и устанавливаем загаловок окна"""
         self.play_surface = pygame.display.set_mode((self.screen_width, self.screen_height))
         pygame.display.set_caption('Snake Game')
-        # self.image = load_image('background.jpg')
+        self.image = load_image('background.jpg')
         rect = (160, 30, 400, 400)
-        # self.play_surface.blit(self.image, (160, 30))
+        self.play_surface.blit(self.image, (160, 30))
 
     def event_loop(self, change_to):
         """Функция для отслеживания нажатий клавиш игроком"""
@@ -209,7 +209,7 @@ class Snake:
         #         pygame.draw.rect(game.play_surface, (200, 150, 200), (j * 10 + 0,
         #                                                         i * 10 + 0,
         #                                                         10, 10), 1)
-        # game.play_surface.blit(game.image, (160, 30))
+        game.play_surface.blit(game.image, (160, 30))
         pygame.draw.rect(game.play_surface, (200, 150, 200), (160, 30, 400, 400), 1)
         for pos in self.snake_body:
             # pygame.Rect(x,y, sizex, sizey)
