@@ -65,6 +65,8 @@ class Game:
         self.play_surface.blit(self.image, (160, 30))
         self.snake = load_image('snake.png')
         self.snake = pygame.transform.scale(self.snake, (25, 25))
+        self.snake_head = load_image('snake_head.png')
+        self.snake_head = pygame.transform.scale(self.snake_head, (25, 25))
 
     def init_and_check_for_errors(self):
         """Начальная функция для инициализации и
@@ -126,21 +128,21 @@ class Game:
         pygame.display.flip()
         game.fps_controller.tick(6)
 
-    # def show_score(self, choice=1):
-    #     """Отображение результата"""
-    #     s_font = pygame.font.SysFont('monaco', 24)
-    #     s_surf = s_font.render(
-    #         'Score: {0}'.format(self.score), True, self.black)
-    #     s_rect = s_surf.get_rect()
-    #     # дефолтный случай отображаем результат слева сверху
-    #     if choice == 1:
-    #         s_rect.midtop = (80, 10)
-    #     # при game_overe отображаем результат по центру
-    #     # под надписью game over
-    #     else:
-    #         s_rect.midtop = (360, 120)
-    #     # рисуем прямоугольник поверх surface
-    #     self.play_surface.blit(s_surf, s_rect)
+    def show_score(self, choice=1):
+        """Отображение результата"""
+        s_font = pygame.font.SysFont('monaco', 24)
+        s_surf = s_font.render(
+            'Score: {0}'.format(self.score), True, self.black)
+        s_rect = s_surf.get_rect()
+        # дефолтный случай отображаем результат слева сверху
+        if choice == 1:
+            s_rect.midtop = (80, 10)
+        # при game_overe отображаем результат по центру
+        # под надписью game over
+        else:
+            s_rect.midtop = (360, 120)
+        # рисуем прямоугольник поверх surface
+        self.play_surface.blit(s_surf, s_rect)
 
     def game_over(self):
         """Функция для вывода надписи Game Over и результатов
@@ -166,9 +168,9 @@ class Game:
         # pygame.quit()
         # sys.exit()
 
-    # def terminate(self):
-    #     pygame.quit()
-    #     sys.exit()
+    def terminate(self):
+        pygame.quit()
+        sys.exit()
     #
     # def start_screen(self):
     #     intro_text = ["ЗАСТАВКА", "",
@@ -312,6 +314,8 @@ class Snake:
         i = 0
         for part in self.body_sprites.sprites():
             print(i)
+            if i == 0:
+                part.image = game.snake_head
             if i < len(self.snake_body):
                 part.rect.x = self.snake_body[i][0]
                 part.rect.y = self.snake_body[i][1]
@@ -396,8 +400,8 @@ food = Food(game.brown, game.board_width, game.board_height)
 
 game.init_and_check_for_errors()
 # game.set_surface_and_title()
-if game.start_screen():
-    pass
+# if game.start_screen():
+#     pass
 
 while True:
     snake.change_to = game.event_loop(snake.change_to)
