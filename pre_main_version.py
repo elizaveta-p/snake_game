@@ -155,13 +155,24 @@ class Game:
         go_rect.midtop = (360, 15)
         self.play_surface.blit(go_surf, go_rect)
         self.show_score(0)
+        self.end_buttons = pygame.sprite.Group()
+        to_menu = pygame.sprite.Sprite()
+        to_menu.image = load_image('button.png')
+        to_menu.image = pygame.transform.scale(to_menu.image, (150, 50))
+        to_menu.rect = to_menu.image.get_rect()
+        to_menu.rect.x = 350
+        to_menu.rect.y = 200
+        self.end_buttons.add(to_menu)
+        self.end_buttons.draw(self.play_surface)
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.terminate()
-                elif event.type == pygame.KEYDOWN or \
-                        event.type == pygame.MOUSEBUTTONDOWN:
-                    return True
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    pos = event.pos
+                    if (pos[0] in range(to_menu.rect.x, to_menu.rect.x + 150)) and \
+                            (pos[1] in range(to_menu.rect.y, to_menu.rect.y + 50)):
+                        self.start_screen()
             pygame.display.flip()
             self.fps_controller.tick(50)
         # time.sleep(3)
@@ -171,38 +182,129 @@ class Game:
     def terminate(self):
         pygame.quit()
         sys.exit()
-    #
-    # def start_screen(self):
-    #     intro_text = ["ЗАСТАВКА", "",
-    #                   "Правила игры",
-    #                   "Если в правилах несколько строк,",
-    #                   "приходится выводить их построчно"]
-    #
-    #     fon = pygame.transform.scale(load_image('fon.jpg'), (self.screen_width, self.screen_height))
-    #     self.play_surface.blit(fon, (0, 0))
-    #     font = pygame.font.Font(None, 30)
-    #     text_coord = 50
-    #     for line in intro_text:
-    #         string_rendered = font.render(line, 1, pygame.Color('green'))
-    #         intro_rect = string_rendered.get_rect()
-    #         text_coord += 10
-    #         intro_rect.top = text_coord
-    #         intro_rect.x = 10
-    #         text_coord += intro_rect.height
-    #         self.play_surface.blit(string_rendered, intro_rect)
-    #
-    #     while True:
-    #         for event in pygame.event.get():
-    #             if event.type == pygame.QUIT:
-    #                 self.terminate()
-    #             elif event.type == pygame.KEYDOWN or \
-    #                     event.type == pygame.MOUSEBUTTONDOWN:
-    #                 return True
-    #         pygame.display.flip()
-    #         self.fps_controller.tick(50)
-    #
-    # def instructions_screen(self):
-    #     pass
+
+    def start_screen(self):
+        intro_text = ["ЗАСТАВКА", "",
+                      "Правила игры",
+                      "Если в правилах несколько строк,",
+                      "приходится выводить их построчно"]
+
+        fon = pygame.transform.scale(load_image('fon.jpg'), (self.screen_width, self.screen_height))
+        self.play_surface.blit(fon, (0, 0))
+        font = pygame.font.Font(None, 30)
+        text_coord = 50
+        for line in intro_text:
+            string_rendered = font.render(line, 1, pygame.Color('green'))
+            intro_rect = string_rendered.get_rect()
+            text_coord += 10
+            intro_rect.top = text_coord
+            intro_rect.x = 10
+            text_coord += intro_rect.height
+            self.play_surface.blit(string_rendered, intro_rect)
+        self.buttons = pygame.sprite.Group()
+        play_button = pygame.sprite.Sprite()
+        play_button.image = load_image('button.png')
+        play_button.image = pygame.transform.scale(play_button.image, (150, 50))
+        play_button.rect = play_button.image.get_rect()
+        play_button.rect.x = 500
+        play_button.rect.y = 200
+        self.buttons.add(play_button)
+        instructions_button = pygame.sprite.Sprite()
+        instructions_button.image = load_image('button.png')
+        instructions_button.image = pygame.transform.scale(play_button.image, (150, 50))
+        instructions_button.rect = play_button.image.get_rect()
+        instructions_button.rect.x = 500
+        instructions_button.rect.y = 300
+        self.buttons.add(instructions_button)
+        self.buttons.draw(self.play_surface)
+
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.terminate()
+                elif event.type == pygame.KEYDOWN:
+                    self.start_game()
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    pos = event.pos
+                    print(pos)
+                    if (pos[0] in range(play_button.rect.x, play_button.rect.x + 150)) and \
+                            (pos[1] in range(play_button.rect.y, play_button.rect.y + 50)):
+                        self.start_game()
+                    elif (pos[0] in range(instructions_button.rect.x, instructions_button.rect.x + 150)) and \
+                            (pos[1] in range(instructions_button.rect.y, instructions_button.rect.y + 50)):
+                        if self.instructions_screen():
+                            continue
+            pygame.display.flip()
+            self.fps_controller.tick(50)
+
+    def instructions_screen(self):
+        self.play_surface.fill(game.white)
+        text = ['instructions']
+        font = pygame.font.Font(None, 30)
+        text_coord = 50
+        for line in text:
+            string_rendered = font.render(line, 1, pygame.Color('green'))
+            rect = string_rendered.get_rect()
+            text_coord += 10
+            rect.top = text_coord
+            rect.x = 10
+            text_coord += rect.height
+            self.play_surface.blit(string_rendered, rect)
+        self.ins_scrn_buttons = pygame.sprite.Group()
+        back_button = pygame.sprite.Sprite()
+        back_button.image = load_image('button.png')
+        back_button.image = pygame.transform.scale(back_button.image, (150, 50))
+        back_button.rect = back_button.image.get_rect()
+        back_button.rect.x = 500
+        back_button.rect.y = 250
+        self.ins_scrn_buttons.add(back_button)
+        self.ins_scrn_buttons.add(back_button)
+        self.ins_scrn_buttons.draw(self.play_surface)
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.terminate()
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    pos = event.pos
+                    print(pos)
+                    if (pos[0] in range(back_button.rect.x, back_button.rect.x + 150)) and \
+                            (pos[1] in range(back_button.rect.y, back_button.rect.y + 50)):
+                        self.start_screen()
+                        return True
+
+            pygame.display.flip()
+            self.fps_controller.tick(50)
+
+    def start_game(self):
+        global game, snake, food, foods
+        game = Game()
+
+        game.load_graphic_elements()
+
+        snake = Snake(game.green)
+        foods = pygame.sprite.GroupSingle()
+        food = Food(game.brown, game.board_width, game.board_height)
+
+        game.init_and_check_for_errors()
+        game.set_surface_and_title()
+
+        game.play_surface.fill(game.white)
+        while True:
+            snake.change_to = game.event_loop(snake.change_to)
+
+            snake.validate_direction_and_change()
+            snake.change_head_position()
+            game.score, food.food_pos = snake.snake_body_mechanism(
+                game.score, food.food_pos, game.board_width, game.board_height)
+            snake.draw_snake(game.play_surface, game.white)
+
+            food.draw_food(game.play_surface)
+
+            snake.check_for_boundaries(
+                game.game_over, game.board_width, game.board_height)
+
+            game.show_score()
+            game.refresh_screen()
 
 
 class Snake:
@@ -279,8 +381,6 @@ class Snake:
                 y = random.randrange(1, (screen_height / game.cell_size)) * game.cell_size
                 if [x + game.board_left, y + game.board_top] not in snake.snake_body:
                     not_found = False
-            # x = random.randrange(1, screen_width / game.cell_size) * game.cell_size
-            # y = random.randrange(1, screen_height / game.cell_size) * game.cell_size
             print(x, y)
             food_pos = [x + game.board_left,
                         y + game.board_top]
@@ -298,24 +398,21 @@ class Snake:
     def draw_snake(self, play_surface, surface_color):
         """Отображаем все сегменты змеи"""
         play_surface.fill(surface_color)
-        # for i in range(game.screen_height):
-        #     for j in range(game.screen_width):
-        #         pygame.draw.rect(game.play_surface, (200, 150, 200), (j * 10 + 0,
-        #                                                         i * 10 + 0,
-        #                                                         10, 10), 1)
         game.play_surface.blit(game.image, (160, 30))
         pygame.draw.rect(game.play_surface, (200, 150, 200), (160, 30, 400, 400), 1)
-        # for pos in self.snake_body:
-        # pygame.Rect(x,y, sizex, sizey)
-        # pygame.draw.rect(
-        #     play_surface, self.snake_color, pygame.Rect(
-        #         pos[0], pos[1], game.cell_size, game.cell_size))
-        # i = self.snake_body.index(pos)
         i = 0
         for part in self.body_sprites.sprites():
-            print(i)
+            # print(i)
             if i == 0:
                 part.image = game.snake_head
+                if self.direction == "RIGHT":
+                    part.image = pygame.transform.rotate(game.snake_head, -90)
+                elif self.direction == "LEFT":
+                    part.image = pygame.transform.rotate(game.snake_head, 90)
+                elif self.direction == "UP":
+                    part.image = pygame.transform.rotate(game.snake_head, 180)
+                elif self.direction == "DOWN":
+                    part.image = pygame.transform.rotate(game.snake_head, 0)
             if i < len(self.snake_body):
                 part.rect.x = self.snake_body[i][0]
                 part.rect.y = self.snake_body[i][1]
@@ -355,11 +452,10 @@ class Food:
         print('------food init-------')
         self.food_color = food_color
         self.food_size_x = self.food_size_y = game.cell_size
-        # self.food_size_y = 10
         not_found = True
         while not_found:
-            x = random.randrange(1, (screen_width / game.cell_size)) * game.cell_size
-            y = random.randrange(1, (screen_height / game.cell_size)) * game.cell_size
+            x = random.randrange(0, (screen_width / game.cell_size)) * game.cell_size
+            y = random.randrange(0, (screen_height / game.cell_size)) * game.cell_size
             if [x + game.board_left, y + game.board_top] not in snake.snake_body:
                 not_found = False
         print(x, y)
@@ -385,9 +481,8 @@ class Food:
         #         self.food_size_x, self.food_size_y))
         self.apple.x = x
         self.apple.y = y
-        foods.draw(game.play_surface)
+        foods.draw(play_surface)
         foods.update()
-        # game.play_surface.blit(game.apple, (x, y))
 
 
 game = Game()
@@ -399,23 +494,24 @@ foods = pygame.sprite.GroupSingle()
 food = Food(game.brown, game.board_width, game.board_height)
 
 game.init_and_check_for_errors()
-# game.set_surface_and_title()
-# if game.start_screen():
-#     pass
-
-while True:
-    snake.change_to = game.event_loop(snake.change_to)
-
-    snake.validate_direction_and_change()
-    snake.change_head_position()
-    game.score, food.food_pos = snake.snake_body_mechanism(
-        game.score, food.food_pos, game.board_width, game.board_height)
-    snake.draw_snake(game.play_surface, game.white)
-
-    food.draw_food(game.play_surface)
-
-    snake.check_for_boundaries(
-        game.game_over, game.board_width, game.board_height)
-
-    game.show_score()
-    game.refresh_screen()
+game.set_surface_and_title()
+game.start_screen()
+print('here')
+game.play_surface.fill(game.white)
+# while True:
+#     print('here')
+#     snake.change_to = game.event_loop(snake.change_to)
+#
+#     snake.validate_direction_and_change()
+#     snake.change_head_position()
+#     game.score, food.food_pos = snake.snake_body_mechanism(
+#         game.score, food.food_pos, game.board_width, game.board_height)
+#     snake.draw_snake(game.play_surface, game.white)
+#
+#     food.draw_food(game.play_surface)
+#
+#     snake.check_for_boundaries(
+#         game.game_over, game.board_width, game.board_height)
+#
+#     game.show_score()
+#     game.refresh_screen()
