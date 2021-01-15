@@ -63,10 +63,14 @@ class Game:
         self.apple = load_image('apple.png')
         self.apple = pygame.transform.scale(self.apple, (25, 25))
         self.play_surface.blit(self.image, (160, 30))
-        self.snake = load_image('snake.png')
+        self.snake = load_image('body_part.png')
         self.snake = pygame.transform.scale(self.snake, (25, 25))
         self.snake_head = load_image('snake_head.png')
         self.snake_head = pygame.transform.scale(self.snake_head, (25, 25))
+        self.angled_part = load_image('angled_part.png')
+        self.angled_part = pygame.transform.scale(self.angled_part, (25, 25))
+        self.snake_tail = load_image('tail.png')
+        self.snake_tail = pygame.transform.scale(self.snake_tail, (25, 25))
 
     def init_and_check_for_errors(self):
         """Начальная функция для инициализации и
@@ -74,15 +78,6 @@ class Game:
         check_errors = pygame.init()
         """Задаем surface(поверхность поверх которой будет все рисоваться)
                 и устанавливаем загаловок окна"""
-        # self.play_surface = pygame.display.set_mode((self.screen_width, self.screen_height))
-        # pygame.display.set_caption('Snake Game')
-        # self.image = load_image('background.jpg')
-        # rect = (160, 30, 400, 400)
-        # self.apple = load_image('apple.png')
-        # self.apple = pygame.transform.scale(self.apple, (25, 25))
-        # self.play_surface.blit(self.image, (160, 30))
-        # self.snake = load_image('snake.png')
-        # self.snake = pygame.transform.scale(self.snake, (25, 25))
         if check_errors[1] > 0:
             sys.exit()
         else:
@@ -288,7 +283,8 @@ class Game:
         game.init_and_check_for_errors()
         game.set_surface_and_title()
 
-        game.play_surface.fill(game.white)
+        # game.play_surface.fill(game.white)
+        pygame.draw.rect(game.play_surface, (200, 150, 200), (160, 30, 400, 400), 1)
         while True:
             snake.change_to = game.event_loop(snake.change_to)
 
@@ -360,21 +356,10 @@ class Snake:
         self.snake_body.insert(0, list(self.snake_head_pos))
 
         # если съели еду
-        # if pygame.sprite.spritecollide(food.apple, snake.body_sprites,
-        #                                False,
-        #                                collided=lambda col: (self.snake_head_pos[0] == food_pos[0]
-        #                                            and self.snake_head_pos[1] == food_pos[1])):
         if (self.snake_head_pos[0] == food_pos[0] and
                 self.snake_head_pos[1] == food_pos[1]):
-
             # если съели еду то задаем новое положение еды случайным
             # образом и увеличивем score на один
-            # food_pos = [random.randrange(1, screen_width/10)*10,
-            #             random.randrange(1, screen_height/10)*10]
-            # new_snake_part = pygame.sprite.Sprite()
-            # new_snake_part.image = game.snake
-            # new_snake_part.rect = new_snake_part.image.get_rect()
-
             not_found = True
             while not_found:
                 x = random.randrange(1, (screen_width / game.cell_size)) * game.cell_size
@@ -384,10 +369,6 @@ class Snake:
             print(x, y)
             food_pos = [x + game.board_left,
                         y + game.board_top]
-            # food.apple.x = food_pos[0]
-            # food.apple.y = food_pos[1]
-            # foods.draw(game.play_surface)
-            # foods.update()
             score += 1
         else:
             # если не нашли еду, то убираем последний сегмент,
@@ -398,9 +379,10 @@ class Snake:
     def draw_snake(self, play_surface, surface_color):
         """Отображаем все сегменты змеи"""
         play_surface.fill(surface_color)
-        game.play_surface.blit(game.image, (160, 30))
+        # game.play_surface.blit(game.image, (160, 30))
         pygame.draw.rect(game.play_surface, (200, 150, 200), (160, 30, 400, 400), 1)
         i = 0
+        body_in_list = []
         for part in self.body_sprites.sprites():
             # print(i)
             if i == 0:
@@ -417,6 +399,7 @@ class Snake:
                 part.rect.x = self.snake_body[i][0]
                 part.rect.y = self.snake_body[i][1]
             i += 1
+            body_in_list.append(part)
         if len(self.snake_body) > len(self.body_sprites.sprites()):
             new_snake_part = pygame.sprite.Sprite()
             new_snake_part.image = game.snake
@@ -424,6 +407,8 @@ class Snake:
             new_snake_part.rect.x = self.snake_body[i][0]
             new_snake_part.rect.y = self.snake_body[i][1]
             self.body_sprites.add(new_snake_part)
+            body_in_list.append(new_snake_part)
+        self.is_angled(body_in_list)
         self.body_sprites.draw(play_surface)
         self.body_sprites.update()
 
@@ -445,11 +430,67 @@ class Snake:
                     block[1] == self.snake_head_pos[1]):
                 game_over()
 
+    def is_angled(self, body):
+        for i in range(1, len(body[:-1])):
+            prev_part = body[i - 1]
+            part = body[i]
+            next_part = body[i + 1]
+            print(prev_part.rect.x, part.rect.x, next_part.rect.x)
+            print(prev_part.rect.y, part.rect.y, next_part.rect.y)
+            if ((prev_part.rect.x != part.rect.x) or (part.rect.x != next_part.rect.x)) and \
+                    ((prev_part.rect.y != part.rect.y) or (part.rect.y != next_part.rect.y)):
+                print('is angled')
+                part.image = game.angled_part
+                if (prev_part.rect.y < part.rect.y and next_part.rect.x > part.rect.x) or \
+                        (next_part.rect.y < part.rect.y and prev_part.rect.x > part.rect.x):
+                    part.image = game.angled_part
+                elif (prev_part.rect.y < part.rect.y and next_part.rect.x < part.rect.x) or \
+                        (next_part.rect.y < part.rect.y and prev_part.rect.x < part.rect.x):
+                    part.image = pygame.transform.rotate(game.angled_part, 90)
+                elif (prev_part.rect.y > part.rect.y and next_part.rect.x > part.rect.x) or \
+                        (next_part.rect.y > part.rect.y and prev_part.rect.x > part.rect.x):
+                    part.image = pygame.transform.rotate(game.angled_part, -90)
+                else:
+                    part.image = pygame.transform.rotate(game.angled_part, 180)
+            elif (prev_part.rect.x == part.rect.x) and (part.rect.x == next_part.rect.x):
+                # part.image = pygame.transform.rotate(game.snake, 90)
+                # next_part.image = pygame.transform.rotate(game.snake, 90)
+                part.image = game.snake
+                next_part.image = game.snake
+            else:
+                part.image = pygame.transform.rotate(game.snake, 90)
+                next_part.image = pygame.transform.rotate(game.snake, 90)
+                # part.image = game.snake
+                # next_part.image = game.snake
+        head = body[0]
+        next_part = body[1]
+        if head.rect.x == next_part.rect.x:
+            if head.rect.y < next_part.rect.y:
+                head.image = game.snake_head
+            else:
+                head.image = pygame.transform.rotate(game.snake_head, 180)
+        elif head.rect.y == next_part.rect.y:
+            if head.rect.x > next_part.rect.x:
+                head.image = pygame.transform.rotate(game.snake_head, -90)
+            else:
+                head.image = pygame.transform.rotate(game.snake_head, 90)
+        tail = body[-1]
+        prev_part = body[-2]
+        if tail.rect.x == prev_part.rect.x:
+            if tail.rect.y < prev_part.rect.y:
+                tail.image = game.snake_tail
+            else:
+                tail.image = pygame.transform.rotate(game.snake_tail, 180)
+        elif tail.rect.y == prev_part.rect.y:
+            if tail.rect.x > prev_part.rect.x:
+                tail.image = pygame.transform.rotate(game.snake_tail, -90)
+            else:
+                tail.image = pygame.transform.rotate(game.snake_tail, 90)
+
 
 class Food:
     def __init__(self, food_color, screen_width, screen_height):
         """Инит еды"""
-        print('------food init-------')
         self.food_color = food_color
         self.food_size_x = self.food_size_y = game.cell_size
         not_found = True
