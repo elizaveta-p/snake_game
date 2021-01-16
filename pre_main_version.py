@@ -1,4 +1,5 @@
 import os
+import sqlite3
 
 import pygame
 import sys
@@ -23,6 +24,23 @@ def load_image(name, colorkey=None):
     else:
         image = image.convert_alpha()
     return image
+
+
+def add_result_to_db(score, mins, secs):
+    with sqlite3.connect('data/records.db') as con:
+        cur = con.cursor()
+
+        cur.execute(f"""INSERT INTO main VALUES ({score}, {mins}, {secs})""")
+
+
+def get_results_from_database():
+    with sqlite3.connect('data/records.db') as con:
+        cur = con.cursor()
+
+        result = list(cur.execute(f"""SELECT Score, Min, Sec 
+FROM main
+ORDER BY Score DESC, Min ASC, Sec ASC"""))[0:5]
+        return result
 
 
 class Game:
@@ -59,6 +77,8 @@ class Game:
         # (сколько еды съели)
         self.score = 0
         self.max_score = 253
+        self.mins = 0
+        self.secs = 0
 
     def load_graphic_elements(self):
         self.play_surface = pygame.display.set_mode((self.screen_width, self.screen_height))
@@ -121,37 +141,52 @@ class Game:
         pygame.display.flip()
         game.fps_controller.tick(6)
 
-    def show_score(self, choice=1):
+    def show_score(self, start_time=None, choice=1):
         """Отображение результата"""
-        s_font = pygame.font.SysFont('monaco', 24)
+        s_font = pygame.font.SysFont('Sans', 24)
         s_surf = s_font.render(
             'Score: {0}'.format(self.score), True, self.purple)
         s_rect = s_surf.get_rect()
 
-        # print(s_rect)
         # дефолтный случай отображаем результат слева сверху
         if choice == 1:
             s_rect.midtop = (80, 10)
-            pygame.draw.ellipse(game.play_surface, game.ground_color, (38, 7, 80, 20))
+            s_rect.x -= 15
+            s_rect.y -= 10
+            s_rect.width += 10
+            pygame.draw.ellipse(game.play_surface, game.ground_color, s_rect)
+            # print(type(start_time), start_time/1000)
+            time_font = pygame.font.SysFont('Sans', 40)
+            start_time //= 1000
+            mins = ('0' + str(start_time // 60))[-2:]
+            self.mins = int(mins)
+            secs = ('0' + str(start_time % 60))[-2:]
+            self.secs = int(secs)
+            curr_time = time_font.render(f"{mins}:{secs}", True, self.purple)
+            time_rect = curr_time.get_rect()
+            time_rect.x = 35
+            time_rect.y = 50
+            pygame.draw.rect(self.play_surface, game.ground_color, time_rect)
+            self.play_surface.blit(curr_time, (35, 50))
         # при game_overe отображаем результат по центру
         # под надписью game over
         else:
             s_rect.midtop = (350, 100)
             pygame.draw.rect(game.play_surface, game.white, s_rect)
-        # рисуем прямоугольник поверх surface
         self.play_surface.blit(s_surf, s_rect)
 
     def game_over(self):
+        add_result_to_db(self.score, self.mins, self.secs)
         """Функция для вывода надписи Game Over и результатов
         в случае завершения игры и выход из игры"""
         fon = pygame.transform.scale(load_image('fon.jpg'), (self.screen_width, self.screen_height))
         self.play_surface.blit(fon, (0, 0))
-        go_font = pygame.font.SysFont('intro', 72)
+        go_font = pygame.font.SysFont('Sans', 72)
         go_surf = go_font.render('Game over', True, self.brown)
         go_rect = go_surf.get_rect()
         go_rect.midtop = (360, 15)
         self.play_surface.blit(go_surf, go_rect)
-        self.show_score(0)
+        self.show_score(None, 0)
         self.end_buttons = pygame.sprite.Group()
         to_menu = pygame.sprite.Sprite()
         to_menu.image = load_image('button_to_menu.png')
@@ -177,14 +212,15 @@ class Game:
         # sys.exit()
 
     def you_win(self):
+        add_result_to_db(self.score, self.mins, self.secs)
         fon = pygame.transform.scale(load_image('start_background2.jpg'), (self.screen_width, self.screen_height))
         self.play_surface.blit(fon, (0, 0))
-        go_font = pygame.font.SysFont('intro', 72)
+        go_font = pygame.font.SysFont('Sans', 72)
         go_surf = go_font.render('You win!!!', True, self.border_color)
         go_rect = go_surf.get_rect()
         go_rect.midtop = (360, 15)
         self.play_surface.blit(go_surf, go_rect)
-        self.show_score(0)
+        self.show_score(None, 0)
         self.end_buttons = pygame.sprite.Group()
         to_menu = pygame.sprite.Sprite()
         to_menu.image = load_image('button_to_menu.png')
@@ -211,43 +247,31 @@ class Game:
         sys.exit()
 
     def start_screen(self):
-        intro_text = ["ЗАСТАВКА", "",
-                      "Правила игры",
-                      "Если в правилах несколько строк,",
-                      "приходится выводить их построчно"]
-
         fon = pygame.transform.scale(load_image('start_background.jpg'), (self.screen_width, self.screen_height))
         self.play_surface.blit(fon, (0, 0))
-        print(filled_with_snake)
-        # self.play_surface.fill(self.ground_color)
-        # for elem in filled_with_snake:
-        #     pygame.draw.rect(self.play_surface, self.border_color, (elem[1] * 17, elem[0] * 17, 17, 17), 4)
-
-        # font = pygame.font.Font(None, 30)
-        # text_coord = 50
-        # for line in intro_text:
-        #     string_rendered = font.render(line, True, pygame.Color('green'))
-        #     intro_rect = string_rendered.get_rect()
-        #     text_coord += 10
-        #     intro_rect.top = text_coord
-        #     intro_rect.x = 10
-        #     text_coord += intro_rect.height
-        #     self.play_surface.blit(string_rendered, intro_rect)
+        # print(filled_with_snake)
         self.buttons = pygame.sprite.Group()
         play_button = pygame.sprite.Sprite()
         play_button.image = load_image('button_play.png')
         play_button.image = pygame.transform.scale(play_button.image, (150, 50))
         play_button.rect = play_button.image.get_rect()
         play_button.rect.x = 285
-        play_button.rect.y = 260
+        play_button.rect.y = 240
         self.buttons.add(play_button)
         instructions_button = pygame.sprite.Sprite()
         instructions_button.image = load_image('button_instructions.png')
         instructions_button.image = pygame.transform.scale(instructions_button.image, (150, 50))
         instructions_button.rect = instructions_button.image.get_rect()
         instructions_button.rect.x = 285
-        instructions_button.rect.y = 330
+        instructions_button.rect.y = 310
         self.buttons.add(instructions_button)
+        records_button = pygame.sprite.Sprite()
+        records_button.image = load_image('button_records.png')
+        records_button.image = pygame.transform.scale(records_button.image, (150, 50))
+        records_button.rect = instructions_button.image.get_rect()
+        records_button.rect.x = 285
+        records_button.rect.y = 380
+        self.buttons.add(records_button)
         self.buttons.draw(self.play_surface)
 
         while True:
@@ -264,8 +288,10 @@ class Game:
                         self.start_game()
                     elif (pos[0] in range(instructions_button.rect.x, instructions_button.rect.x + 150)) and \
                             (pos[1] in range(instructions_button.rect.y, instructions_button.rect.y + 50)):
-                        if self.instructions_screen():
-                            continue
+                        self.instructions_screen()
+                    elif (pos[0] in range(records_button.rect.x, records_button.rect.x + 150)) and \
+                            (pos[1] in range(records_button.rect.y, records_button.rect.y + 50)):
+                        self.show_record_table()
             for elem in filled_with_snake:
                 choice = random.choice([self.brown, self.light_grass_color,
                                        self.black, self.ground_color])
@@ -283,8 +309,8 @@ class Game:
                 'and lengthen the snake.', '2. Avoid touching dark green borders,', 'it will kill your snake.',
                 "3. You can't bump into your body or cut off your tail,", 'it will also kill the snake.',
                 '4. You will become a winner, if snake fills the entire field.']
-        font = pygame.font.SysFont('intro', 30)
-        text_coord = 50
+        font = pygame.font.SysFont('Sans', 30)
+        text_coord = 20
         for line in text:
             string_rendered = font.render(line, True, self.purple)
             rect = string_rendered.get_rect()
@@ -299,7 +325,7 @@ class Game:
         back_button.image = pygame.transform.scale(back_button.image, (150, 50))
         back_button.rect = back_button.image.get_rect()
         back_button.rect.x = 550
-        back_button.rect.y = 370
+        back_button.rect.y = 390
         self.ins_scrn_buttons.add(back_button)
         self.ins_scrn_buttons.add(back_button)
         self.ins_scrn_buttons.draw(self.play_surface)
@@ -313,12 +339,60 @@ class Game:
                     if (pos[0] in range(back_button.rect.x, back_button.rect.x + 150)) and \
                             (pos[1] in range(back_button.rect.y, back_button.rect.y + 50)):
                         self.start_screen()
-                        return True
+                        # return True
+            pygame.display.flip()
+            self.fps_controller.tick(50)
 
+    def show_record_table(self):
+        self.play_surface.fill(self.white)
+        font = pygame.font.SysFont('Sans', 30)
+        text_coord = 70
+        header = 'Score:                   Time:'
+        header_rend = font.render(header, True, self.brown)
+        rect = header_rend.get_rect()
+        rect.top = 30
+        rect.x = 130
+        self.play_surface.blit(header_rend, rect)
+        table = get_results_from_database()
+        for line in table:
+            score = str(line[0])
+            time = f"{('0' + str(line[1]))[-2:]}:{('0' + str(line[2]))[-2:]}"
+            new_line = list(' '*30)
+            new_line[:len(score) + 1] = list(score)
+            new_line[-1 * len(time):] = list(time)
+            new_line = ''.join(new_line)
+            string_rendered = font.render(new_line, True, self.purple)
+            rect = string_rendered.get_rect()
+            text_coord += 10
+            rect.top = text_coord
+            rect.x = 160
+            text_coord += rect.height
+            self.play_surface.blit(string_rendered, rect)
+        rec_scrn_buttons = pygame.sprite.Group()
+        back_button = pygame.sprite.Sprite()
+        back_button.image = load_image('button_to_menu.png')
+        back_button.image = pygame.transform.scale(back_button.image, (150, 50))
+        back_button.rect = back_button.image.get_rect()
+        back_button.rect.x = 550
+        back_button.rect.y = 390
+        rec_scrn_buttons.add(back_button)
+        rec_scrn_buttons.add(back_button)
+        rec_scrn_buttons.draw(self.play_surface)
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.terminate()
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    pos = event.pos
+                    # print(pos)
+                    if (pos[0] in range(back_button.rect.x, back_button.rect.x + 150)) and \
+                            (pos[1] in range(back_button.rect.y, back_button.rect.y + 50)):
+                        self.start_screen()
             pygame.display.flip()
             self.fps_controller.tick(50)
 
     def start_game(self):
+        clock = pygame.time.Clock()
         global game, snake, food, foods
         game = Game()
 
@@ -335,7 +409,9 @@ class Game:
 
         game.play_surface.blit(self.grass, (0, 0, 720, 460))
         pygame.draw.rect(game.play_surface, self.border_color, (155, 25, 410, 410))
+        start_time = pygame.time.get_ticks()
         while True:
+
             snake.change_to = game.event_loop(snake.change_to)
             snake.validate_direction_and_change()
             snake.change_head_position()
@@ -345,8 +421,8 @@ class Game:
             snake.check_for_boundaries(
                 game.game_over, game.board_width, game.board_height, game.you_win)
             food.draw_food(game.play_surface)
-
-            game.show_score()
+            time_since_enter = pygame.time.get_ticks() - start_time
+            game.show_score(time_since_enter)
             game.refresh_screen()
 
 
@@ -409,8 +485,8 @@ class Snake:
             # образом и увеличивем score на один
             not_found = True
             while not_found:
-                x = random.randrange(1, (screen_width / game.cell_size)) * game.cell_size
-                y = random.randrange(1, (screen_height / game.cell_size)) * game.cell_size
+                x = random.randrange(0, (screen_width / game.cell_size)) * game.cell_size
+                y = random.randrange(0, (screen_height / game.cell_size)) * game.cell_size
                 if [x + game.board_left, y + game.board_top] not in snake.snake_body:
                     not_found = False
                 if len(self.snake_body) == 256:
@@ -493,7 +569,7 @@ class Snake:
             # print(prev_part.rect.y, part.rect.y, next_part.rect.y)
             if ((prev_part.rect.x != part.rect.x) or (part.rect.x != next_part.rect.x)) and \
                     ((prev_part.rect.y != part.rect.y) or (part.rect.y != next_part.rect.y)):
-                print('is angled')
+                # print('is angled')
                 # part.image = game.angled_part
                 if (prev_part.rect.y < part.rect.y and next_part.rect.x > part.rect.x) or \
                         (next_part.rect.y < part.rect.y and prev_part.rect.x > part.rect.x):
