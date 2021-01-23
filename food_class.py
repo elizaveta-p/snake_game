@@ -11,7 +11,6 @@ def load_image(name, colorkey=None):
     fullname = os.path.join('data', name)
 
     if not os.path.isfile(fullname):
-        print('not found')
         sys.exit()
     image = pygame.image.load(fullname)
 
@@ -35,10 +34,8 @@ class Food:
             y = random.randrange(0, (screen_height / cell_size)) * cell_size
             if [x + board_left, y + board_top] not in snake_body:
                 not_found = False
-        print(x, y)
         self.food_pos = [x + board_left,
                          y + board_top]
-        sheet = pygame.transform.scale(load_image('apple_list.png'), (75, 75))
         self.apple = AnimatedSprite(pygame.transform.scale(load_image('apple2.png'), (25, 25)),
                                     pygame.transform.scale(load_image('apple3.png'), (25, 25)),
                                     pygame.transform.scale(load_image('apple4.png'), (25, 25)),

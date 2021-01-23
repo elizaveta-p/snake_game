@@ -80,6 +80,8 @@ class Game:
         self.mins = 0
         self.secs = 0
 
+        self.checking = False
+
     def load_graphic_elements(self):
         self.play_surface = pygame.display.set_mode((self.screen_width, self.screen_height))
         pygame.display.set_caption('Snake Game')
@@ -207,13 +209,10 @@ class Game:
                         self.start_screen()
             pygame.display.flip()
             self.fps_controller.tick(50)
-        # time.sleep(3)
-        # pygame.quit()
-        # sys.exit()
 
     def you_win(self):
         add_result_to_db(self.score, self.mins, self.secs)
-        fon = pygame.transform.scale(load_image('start_background2.jpg'), (self.screen_width, self.screen_height))
+        fon = pygame.transform.scale(load_image('win_background.jpg'), (self.screen_width, self.screen_height))
         self.play_surface.blit(fon, (0, 0))
         go_font = pygame.font.SysFont('Sans', 72)
         go_surf = go_font.render('You win!!!', True, self.border_color)
@@ -294,7 +293,7 @@ class Game:
                         self.show_record_table()
             for elem in filled_with_snake:
                 choice = random.choice([self.brown, self.light_grass_color,
-                                       self.black, self.ground_color])
+                                        self.black, self.ground_color])
                 # choice = pygame.Color(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
                 # if choice == 1:
                 #     pygame.draw.rect(self.play_surface, self.light_grass_color, (elem[1]*17, elem[0]*17, 17, 17))
@@ -357,7 +356,7 @@ class Game:
         for line in table:
             score = str(line[0])
             time = f"{('0' + str(line[1]))[-2:]}:{('0' + str(line[2]))[-2:]}"
-            new_line = list(' '*30)
+            new_line = list(' ' * 30)
             new_line[:len(score) + 1] = list(score)
             new_line[-1 * len(time):] = list(time)
             new_line = ''.join(new_line)
@@ -399,28 +398,32 @@ class Game:
         game.load_graphic_elements()
 
         snake = Snake(game.green)
+        snake_body_list = snake.get_body()
         foods = pygame.sprite.GroupSingle()
-        food = Food(game.brown, game.board_width, game.board_height)
+        food = Food(game.brown, game.board_width, game.board_height, game.cell_size, game.board_top, game.board_left,
+                    snake_body_list, game.apple)
+        foods.add(food.apple)
 
         game.init_and_check_for_errors()
         # game.set_surface_and_title()
 
         game.play_surface.fill(game.light_grass_color)
 
-        game.play_surface.blit(self.grass, (0, 0, 720, 460))
-        pygame.draw.rect(game.play_surface, self.border_color, (155, 25, 410, 410))
+        game.play_surface.blit(game.grass, (0, 0, 720, 460))
+        pygame.draw.rect(game.play_surface, game.border_color, (155, 25, 410, 410))
         start_time = pygame.time.get_ticks()
         while True:
-
             snake.change_to = game.event_loop(snake.change_to)
             snake.validate_direction_and_change()
-            snake.change_head_position()
+            snake.change_head_position(game.cell_size)
             game.score, food.food_pos = snake.snake_body_mechanism(
-                game.score, food.food_pos, game.board_width, game.board_height)
-            snake.draw_snake(game.play_surface, game.white)
+                game.score, food.food_pos, game.board_width, game.board_height,
+                game.cell_size, game.you_win, game.board_top, game.board_left)
+            snake.draw_snake(game.play_surface, game.ground_color)
             snake.check_for_boundaries(
-                game.game_over, game.board_width, game.board_height, game.you_win)
-            food.draw_food(game.play_surface)
+                game.game_over, game.board_width, game.board_height, game.you_win, game.board_left, game.board_top,
+                game.cell_size, game.score, game.max_score)
+            food.draw_food(game.play_surface, foods)
             time_since_enter = pygame.time.get_ticks() - start_time
             game.show_score(time_since_enter)
             game.refresh_screen()
@@ -459,23 +462,23 @@ class Snake:
                 self.change_to == "DOWN" and not self.direction == "UP")):
             self.direction = self.change_to
 
-    def change_head_position(self):
+    def change_head_position(self, cell_size):
         """Изменияем положение головы змеи"""
         if self.direction == "RIGHT":
-            self.snake_head_pos[0] += game.cell_size
+            self.snake_head_pos[0] += cell_size
         elif self.direction == "LEFT":
-            self.snake_head_pos[0] -= game.cell_size
+            self.snake_head_pos[0] -= cell_size
         elif self.direction == "UP":
-            self.snake_head_pos[1] -= game.cell_size
+            self.snake_head_pos[1] -= cell_size
         elif self.direction == "DOWN":
-            self.snake_head_pos[1] += game.cell_size
+            self.snake_head_pos[1] += cell_size
         # если вставлять просто snake_head_pos,
         # то на всех трех позициях в snake_body
         # окажется один и тот же список с одинаковыми координатами
         # и мы будем управлять змеей из одного квадрата
 
     def snake_body_mechanism(
-            self, score, food_pos, screen_width, screen_height):
+            self, score, food_pos, screen_width, screen_height, cell_size, you_win, board_top, board_left):
         self.snake_body.insert(0, list(self.snake_head_pos))
         # print(self.snake_body)
         # если съели еду
@@ -485,13 +488,13 @@ class Snake:
             # образом и увеличивем score на один
             not_found = True
             while not_found:
-                x = random.randrange(0, (screen_width / game.cell_size)) * game.cell_size
-                y = random.randrange(0, (screen_height / game.cell_size)) * game.cell_size
-                if [x + game.board_left, y + game.board_top] not in snake.snake_body:
+                x = random.randrange(0, (screen_width / cell_size)) * cell_size
+                y = random.randrange(0, (screen_height / cell_size)) * cell_size
+                if [x + board_left, y + board_top] not in snake.snake_body:
                     not_found = False
-                if len(self.snake_body) == 256:
+                if len(self.snake_body) == 256 or game.checking:
                     not_found = False
-                    game.you_win()
+                    you_win()
             # print(x, y)
             food_pos = [x + game.board_left,
                         y + game.board_top]
@@ -503,11 +506,11 @@ class Snake:
         # print(f"after: {self.snake_body}")
         return score, food_pos
 
-    def draw_snake(self, play_surface, surface_color):
+    def draw_snake(self, play_surface, ground_color):
         """Отображаем все сегменты змеи"""
         # play_surface.fill(surface_color)
         # game.play_surface.blit(game.image, (160, 30))
-        pygame.draw.rect(play_surface, game.ground_color, (160, 30, 400, 400))
+        pygame.draw.rect(play_surface, ground_color, (160, 30, 400, 400))
         # pygame.draw.rect(play_surface, game.border_color, (160, 30, 400, 400), 1)
         i = 0
         body_in_list = []
@@ -540,17 +543,18 @@ class Snake:
         # self.body_sprites.draw(play_surface)
         # self.body_sprites.update()
 
-    def check_for_boundaries(self, game_over, width, height, you_win):
+    def check_for_boundaries(self, game_over, width, height, you_win, board_left, board_top, cell_size, score,
+                             max_score):
         """Проверка, что столкунлись с концами экрана или сами с собой
         (змея закольцевалась)"""
-        if game.score == game.max_score:
+        if score == max_score:
             you_win()
         if any((
-                self.snake_head_pos[0] > game.board_left + width - game.cell_size
+                self.snake_head_pos[0] > board_left + width - cell_size
                 or self.snake_head_pos[0] < 0,
-                self.snake_head_pos[1] > game.board_top + height - game.cell_size
-                or self.snake_head_pos[0] not in range(game.board_left, game.board_left + game.board_width + 1)
-                or self.snake_head_pos[1] not in range(game.board_top, game.board_top + game.board_height + 1)
+                self.snake_head_pos[1] > board_top + height - cell_size
+                or self.snake_head_pos[0] not in range(board_left, board_left + width + 1)
+                or self.snake_head_pos[1] not in range(board_top, board_top + height + 1)
         )):
             game_over()
         for block in self.snake_body[1:]:
@@ -617,6 +621,9 @@ class Snake:
         self.body_sprites.draw(game.play_surface)
         self.body_sprites.update()
 
+    def get_body(self):
+        return snake.snake_body
+
 
 class Food:
     def __init__(self, food_color, screen_width, screen_height):
@@ -672,7 +679,6 @@ with open('data/snake_doc.txt', 'r') as file:
                 if symb == '#':
                     filled_with_snake.append([row, col])
 
-
 game = Game()
 
 game.load_graphic_elements()
@@ -686,4 +692,3 @@ print('here')
 game.init_and_check_for_errors()
 game.set_surface_and_title()
 game.start_screen()
-

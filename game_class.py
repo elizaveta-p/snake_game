@@ -1,12 +1,9 @@
 import os
-import sqlite3
 
 import pygame
 import sys
 import random
-import time
 
-# from main import filled_with_snake
 from snake_class import Snake
 from food_class import Food
 
@@ -33,25 +30,24 @@ def load_image(name, colorkey=None):
 
 
 def add_result_to_db(score, mins, secs):
-    with sqlite3.connect('data/records.db') as con:
-        cur = con.cursor()
-
-        cur.execute(f"""INSERT INTO main VALUES ({score}, {mins}, {secs})""")
+    with open('data/records.txt', 'r') as file:
+        data = [line.rstrip('\n') for line in file.readlines()]
+    with open('data/records.txt', 'w') as file:
+        data.append(f"{score};{mins};{secs}")
+        data = '\n'.join(data)
+        file.write(data)
 
 
 def get_results_from_database():
-    with sqlite3.connect('data/records.db') as con:
-        cur = con.cursor()
-
-        result = list(cur.execute(f"""SELECT Score, Min, Sec 
-FROM main
-ORDER BY Score DESC, Min ASC, Sec ASC"""))[0:5]
-        return result
+    with open('data/records.txt', 'r') as file:
+        data = [line.rstrip('\n').split(';') for line in file.readlines()]
+        data = sorted(data, key=lambda x: (-int(x[0]), int(x[1]), int(x[2])))
+        return data[0:5]
 
 
 class Game:
     def __init__(self, filled_with_snake):
-        # задаем размеры экрана
+
         self.filled_with_snake = filled_with_snake
         self.screen_width = 720
         self.screen_height = 460
@@ -65,7 +61,6 @@ class Game:
         # set cell size to be able to change it later easily
         self.cell_size = 25
 
-        # необходимые цвета
         self.red = pygame.Color(255, 0, 0)
         self.green = pygame.Color(0, 255, 0)
         self.black = pygame.Color(0, 0, 0)
@@ -76,12 +71,8 @@ class Game:
         self.border_color = pygame.Color(43, 82, 27)
         self.ground_color = pygame.Color(222, 198, 120)
 
-        # Frame per second controller
-        # будет задавать количество кадров в секунду
         self.fps_controller = pygame.time.Clock()
 
-        # переменная для оторбражения результата
-        # (сколько еды съели)
         self.score = 0
         self.max_score = 253
         self.mins = 0
@@ -120,24 +111,14 @@ class Game:
 
         if check_errors[1] > 0:
             sys.exit()
-        else:
-            print('Ok')
 
     def init_sound_settings(self):
         pygame.mixer.init()
-        button_channel = pygame.mixer.Channel(0)
         self.button_sound = pygame.mixer.Sound('data/button_click.wav')
         self.eat_sound = pygame.mixer.Sound('data/food_eaten.wav')
         pygame.mixer.music.load(random.choice(BACKGROUND_MUSIC))
         self.game_over_sound = pygame.mixer.Sound('data/game_over_sound.wav')
         self.you_win_sound = pygame.mixer.Sound('data/you_win_sound.wav')
-
-    def set_surface_and_title(self):
-        self.play_surface = pygame.display.set_mode((self.screen_width, self.screen_height))
-        pygame.display.set_caption('Snake Game')
-        self.image = load_image('background.jpg')
-        rect = (160, 30, 400, 400)
-        self.play_surface.blit(self.image, (160, 30))
 
     def event_loop(self, change_to):
         for event in pygame.event.get():
@@ -156,7 +137,6 @@ class Game:
         return change_to
 
     def refresh_screen(self):
-        # game.play_surface.blit(self.image, (160, 30, 400, 400))
         game.play_surface.blit(self.frame, (144, 14, 429, 429))
         pygame.display.flip()
         game.fps_controller.tick(7)
@@ -172,7 +152,6 @@ class Game:
             s_rect.y -= 10
             s_rect.width += 10
             pygame.draw.ellipse(game.play_surface, game.ground_color, s_rect)
-            # print(type(start_time), start_time/1000)
             time_font = pygame.font.SysFont('Sans', 40)
             start_time //= 1000
             mins = ('0' + str(start_time // 60))[-2:]
@@ -323,9 +302,6 @@ class Game:
             for elem in self.filled_with_snake:
                 choice = random.choice([self.brown, self.light_grass_color,
                                         self.black, self.ground_color])
-                # choice = pygame.Color(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
-                # if choice == 1:
-                #     pygame.draw.rect(self.play_surface, self.light_grass_color, (elem[1]*17, elem[0]*17, 17, 17))
                 pygame.draw.rect(self.play_surface, choice, (elem[1] * 17, elem[0] * 17, 17, 17))
                 pygame.draw.rect(self.play_surface, self.border_color, (elem[1] * 17, elem[0] * 17, 17, 17), 2)
             pygame.display.flip()
@@ -414,7 +390,6 @@ class Game:
                     self.terminate()
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     pos = event.pos
-                    # print(pos)
                     if (pos[0] in range(back_button.rect.x, back_button.rect.x + 150)) and \
                             (pos[1] in range(back_button.rect.y, back_button.rect.y + 50)):
                         ch = self.button_sound.play()
@@ -439,14 +414,11 @@ class Game:
         foods.add(food.apple)
 
         game.init_and_check_for_errors()
-        # game.set_surface_and_title()
 
         game.play_surface.fill(game.light_grass_color)
 
         game.play_surface.blit(game.grass, (0, 0, 720, 460))
         pygame.mixer.music.play(-1)
-        # pygame.draw.rect(game.play_surface, game.border_color, (155, 25, 410, 410))
-        # game.play_surface.blit(self.frame, (155, 25, 410, 410))
         start_time = pygame.time.get_ticks()
         counter = 0
         while True:

@@ -20,7 +20,6 @@ def load_image(name, colorkey=None):
     fullname = os.path.join('data', name)
 
     if not os.path.isfile(fullname):
-        print('not found')
         sys.exit()
     image = pygame.image.load(fullname)
 
@@ -120,12 +119,10 @@ class Snake:
         return score, food_pos
 
     def draw_snake(self, play_surface, ground):
-        # pygame.draw.rect(play_surface, ground_color, (160, 30, 400, 400))
         play_surface.blit(ground, (160, 30, 400, 400))
         i = 0
         body_in_list = []
         for part in self.body_sprites.sprites():
-            # print(i)
             if i < len(self.snake_body):
                 part.rect.x = self.snake_body[i][0]
                 part.rect.y = self.snake_body[i][1]
@@ -140,8 +137,6 @@ class Snake:
             self.body_sprites.add(new_snake_part)
             body_in_list.append(new_snake_part)
         self.is_angled(play_surface, body_in_list)
-        # self.body_sprites.draw(play_surface)
-        # self.body_sprites.update()
 
     def check_for_boundaries(self, game_over, width, height, you_win, board_left, board_top, cell_size, score,
                              max_score):
@@ -157,12 +152,10 @@ class Snake:
                 or self.snake_head_pos[0] not in range(board_left, board_left + width + 1)
                 or self.snake_head_pos[1] not in range(board_top, board_top + height + 1)
         )):
-            print('first game over')
             game_over()
         for block in self.snake_body[1:]:
             if (block[0] == self.snake_head_pos[0] and
                     block[1] == self.snake_head_pos[1]):
-                print('second game over')
                 game_over()
 
     def is_angled(self, play_surface, body):
@@ -170,12 +163,8 @@ class Snake:
             prev_part = body[i - 1]
             part = body[i]
             next_part = body[i + 1]
-            # print(prev_part.rect.x, part.rect.x, next_part.rect.x)
-            # print(prev_part.rect.y, part.rect.y, next_part.rect.y)
             if ((prev_part.rect.x != part.rect.x) or (part.rect.x != next_part.rect.x)) and \
                     ((prev_part.rect.y != part.rect.y) or (part.rect.y != next_part.rect.y)):
-                # print('is angled')
-                # part.image = game.angled_part
                 if (prev_part.rect.y < part.rect.y and next_part.rect.x > part.rect.x) or \
                         (next_part.rect.y < part.rect.y and prev_part.rect.x > part.rect.x):
                     part.image = ANGLED_PARTS['top_right']
@@ -193,8 +182,6 @@ class Snake:
             else:
                 part.image = BODY['horizontal']
                 next_part.image = BODY['horizontal']
-                # part.image = game.snake
-                # next_part.image = game.snake
         head = body[0]
         next_part = body[1]
         if head.rect.x == next_part.rect.x:
