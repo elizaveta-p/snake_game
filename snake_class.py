@@ -5,6 +5,7 @@ import pygame
 import sys
 import random
 import time
+from game_class import load_image
 
 
 ANGLED_PARTS = {'top_right': None,
@@ -16,22 +17,22 @@ HEAD = {'top': None, 'right': None, 'bottom': None, 'left': None}
 TAIL = {'top': None, 'right': None, 'bottom': None, 'left': None}
 
 
-def load_image(name, colorkey=None):
-    fullname = os.path.join('data', name)
-
-    if not os.path.isfile(fullname):
-        sys.exit()
-    image = pygame.image.load(fullname)
-
-    if colorkey is not None:
-        image = image.convert()
-        if colorkey == -1:
-            colorkey = image.get_at((0, 0))
-        image.set_colorkey(colorkey)
-
-    else:
-        image = image.convert_alpha()
-    return image
+# def load_image(name, colorkey=None):
+#     fullname = os.path.join('data', name)
+#
+#     if not os.path.isfile(fullname):
+#         sys.exit()
+#     image = pygame.image.load(fullname)
+#
+#     if colorkey is not None:
+#         image = image.convert()
+#         if colorkey == -1:
+#             colorkey = image.get_at((0, 0))
+#         image.set_colorkey(colorkey)
+#
+#     else:
+#         image = image.convert_alpha()
+#     return image
 
 
 class Snake:
